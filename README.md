@@ -6,13 +6,13 @@ Uploaded files are securely attached to the cart item as line item properties, m
 
 This section is ideal for stores that require customer-provided files during checkout, such as:
 
-Printing & signage stores (artwork, PDFs, designs)
+  - Printing & signage stores (artwork, PDFs, designs)
 
-Custom apparel (logos, images)
+  -  Custom apparel (logos, images)
 
-Engraving or personalization services
+  - Engraving or personalization services
 
-Any made-to-order product requiring customer assets
+  - Any made-to-order product requiring customer assets
 
 The section is fully customizable through the Shopify Theme Editor and works with both standard add-to-cart and AJAX cart / drawer systems (including Minimog-style themes).
 
