@@ -147,21 +147,21 @@ Supports dynamic product forms and theme reloads
 
 # ⚠️ Troubleshooting
 
-Files not attaching to the order?
+- Files not attaching to the order?
 → Ensure the section is placed on a product page with a valid Add to Cart form.
 
-Cart drawer not updating?
+- Cart drawer not updating?
 → Your theme must listen for cart:updated or cart:refresh events (already handled for most modern themes).
 
-Images not previewing?
+- Images not previewing?
 → Only image MIME types (image/*) generate previews. Other formats will show a document icon.
 
-Button not working?
+- Button not working?
 → Ensure no conflicting custom scripts override the product form submit behavior.
 
 # ✅ Summary
 
-The Custom File Upload Section provides a clean, professional, and reliable way to collect customer files during the add-to-cart process — without third-party apps.
+The Custom File Upload Section provides a clean, professional, and reliable way to collect customer files during the add-to-cart process, without third-party apps.
 
 It improves order accuracy, reduces back-and-forth communication, and is fully customizable from the Shopify Theme Editor.
 
