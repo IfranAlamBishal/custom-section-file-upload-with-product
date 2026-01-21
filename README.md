@@ -16,6 +16,9 @@ This section is ideal for stores that require customer-provided files during che
 
 The section is fully customizable through the Shopify Theme Editor and works with both standard add-to-cart and AJAX cart / drawer systems (including Minimog-style themes).
 
+<img width="1900" height="490" alt="Custom File Upload Section (Product Add-to-Cart)"  src="https://github.com/user-attachments/assets/4df60c02-374f-4999-831e-2e60a377b50f" />
+
+
 # ✅ How to Install
 
 Follow these steps to install and use the Custom File Upload section in your Shopify theme:
