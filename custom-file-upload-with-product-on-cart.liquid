@@ -1,0 +1,177 @@
+{% assign section_id = section.id | replace: '_', '' | replace: '-', '' %}
+
+{% style %}
+  .upload-container-{{ section_id }} {
+    max-width: 1200px; width: 100%; margin: 2rem auto; padding: 1.5rem;
+    background-color: {{ section.settings.background_color }};
+    border-radius: {{ section.settings.border_radius }}px;
+    border: 1px solid {{ section.settings.border_color }};
+    font-family: inherit; box-sizing: border-box;
+  }
+  .upload-area-{{ section_id }} {
+    border: 2px dashed {{ section.settings.border_color }};
+    border-radius: {{ section.settings.dropzone_radius }}px;
+    padding: 2rem 1rem; text-align: center;
+    background-color: {{ section.settings.dropzone_bg_color }};
+    cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 0.75rem;
+  }
+  .upload-icon-{{ section_id }} { width: 32px; height: 32px; color: {{ section.settings.accent_color }}; }
+  .upload-button-{{ section_id }} {
+    background-color: {{ section.settings.button_color }};
+    color: {{ section.settings.button_text_color }};
+    padding: 8px 16px; border-radius: {{ section.settings.button_radius }}px; font-size: 13px;
+  }
+  .file-list-{{ section_id }} { margin-top: 1rem; display: flex; flex-direction: column; gap: 10px; }
+  .file-item-{{ section_id }} {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px; background: #fff; border: 1px solid #ddd; border-radius: 8px;
+  }
+  .preview-wrapper-{{ section_id }} { display: flex; align-items: center; gap: 12px; }
+  .real-preview-{{ section_id }} {
+    width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #eee;
+  }
+  .remove-file-{{ section_id }} { background: none; border: none; color: #ff4d4d; cursor: pointer; font-weight: bold; }
+  .hidden-inputs-container { display: none !important; }
+{% endstyle %}
+
+<div class="upload-container-{{ section_id }}">
+  <h3 style="color: {{ section.settings.text_color }}; font-size: 1.1rem; font-weight: 600; margin-bottom:1rem;">{{ section.settings.title }}</h3>
+  
+  <div class="upload-area-{{ section_id }}" id="DropArea-{{ section_id }}">
+    <svg class="upload-icon-{{ section_id }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/>
+    </svg>
+    <p style="margin:0; font-size: 14px;">{{ section.settings.dropzone_text }}</p>
+    <div class="upload-button-{{ section_id }}">{{ section.settings.browse_button_text }}</div>
+  </div>
+
+  <div class="hidden-inputs-container">
+    {% for i in (1..section.settings.max_files) %}
+      <input type="file" id="FileInput-{{ section_id }}-{{ i }}" name="properties[{{ section.settings.property_name }} {{ i }}]" class="custom-file-input-{{ section_id }}" accept="{{ section.settings.accepted_file_types }}" data-index="{{ i }}">
+    {% endfor %}
+  </div>
+
+  <div id="FileList-{{ section_id }}" class="file-list-{{ section_id }}"></div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const sectionId = '{{ section_id }}';
+  const dropArea = document.getElementById(`DropArea-${sectionId}`);
+  const fileList = document.getElementById(`FileList-${sectionId}`);
+
+  function initForm() {
+    const atcButton = document.querySelector('[id^="ProductSubmitButton"]');
+    if (!atcButton) return;
+    const form = atcButton.closest('form');
+    if (!form) return;
+
+    form.setAttribute('enctype', 'multipart/form-data');
+    const container = document.querySelector('.hidden-inputs-container');
+    if (container && !form.contains(container)) form.appendChild(container);
+
+    // INTERCEPT SUBMIT FOR AJAX DRAWER SUPPORT
+    form.addEventListener('submit', function(e) {
+      const hasFiles = Array.from(document.querySelectorAll(`.custom-file-input-${sectionId}`)).some(i => i.files.length > 0);
+      if (!hasFiles) return; // Let theme handle normal products
+
+      e.preventDefault();
+      e.stopImmediatePropagation();
+
+      const formData = new FormData(form);
+      atcButton.classList.add('m-spinner');
+
+      fetch('/cart/add.js', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        atcButton.classList.remove('m-spinner');
+        // Tell Minimog to refresh the cart and open the drawer
+        if (window.MinimogEvents) {
+          window.MinimogEvents.emit('cart:updated');
+        }
+        document.documentElement.dispatchEvent(new CustomEvent('cart:refresh', { bubbles: true }));
+      })
+      .catch(err => {
+        console.error("Upload Error:", err);
+        form.submit(); // Fallback to normal submit on error
+      });
+    }, true);
+  }
+
+  initForm();
+
+  // Handle Selection & UI Previews
+  dropArea.addEventListener('click', () => {
+    const nextInput = Array.from(document.querySelectorAll(`.custom-file-input-${sectionId}`)).find(i => i.files.length === 0);
+    if (nextInput) nextInput.click();
+  });
+
+  document.addEventListener('change', (e) => {
+    if (e.target.classList.contains(`custom-file-input-${sectionId}`)) renderFiles();
+  });
+
+  function renderFiles() {
+    fileList.innerHTML = '';
+    document.querySelectorAll(`.custom-file-input-${sectionId}`).forEach((input, idx) => {
+      if (input.files.length > 0) {
+        const file = input.files[0];
+        const isImage = file.type.startsWith('image/');
+        const previewSrc = isImage ? URL.createObjectURL(file) : '';
+
+        const fileRow = document.createElement('div');
+        fileRow.className = `file-item-${sectionId}`;
+        fileRow.innerHTML = `
+          <div class="preview-wrapper-${sectionId}">
+            ${isImage ? `<img src="${previewSrc}" class="real-preview-${sectionId}">` : '📄'}
+            <div>
+              <strong style="display:block; font-size:13px;">${file.name}</strong>
+              <small style="color:green;">Ready for upload</small>
+            </div>
+          </div>
+          <button type="button" class="remove-file-${sectionId}" data-idx="${idx+1}">✕</button>
+        `;
+        fileList.appendChild(fileRow);
+      }
+    });
+
+    document.querySelectorAll(`.remove-file-${sectionId}`).forEach(btn => {
+      btn.onclick = () => {
+        const idx = btn.getAttribute('data-idx');
+        document.getElementById(`FileInput-${sectionId}-${idx}`).value = '';
+        renderFiles();
+      };
+    });
+  }
+
+  const observer = new MutationObserver(initForm);
+  observer.observe(document.body, { childList: true, subtree: true });
+});
+</script>
+
+{% schema %}
+{
+  "name": "Custom File Upload",
+  "settings": [
+    { "type": "text", "id": "property_name", "label": "Label", "default": "Design" },
+    { "type": "text", "id": "title", "label": "Title", "default": "Upload Artwork" },
+    { "type": "text", "id": "dropzone_text", "label": "Text", "default": "Click to select" },
+    { "type": "text", "id": "browse_button_text", "label": "Button", "default": "Select File" },
+    { "type": "range", "id": "max_files", "min": 1, "max": 10, "default": 3, "label": "Max Files" },
+    { "type": "text", "id": "accepted_file_types", "label": "Types", "default": "image/*,.pdf" },
+    { "type": "color", "id": "background_color", "label": "BG", "default": "#ffffff" },
+    { "type": "color", "id": "text_color", "label": "Text", "default": "#222222" },
+    { "type": "color", "id": "accent_color", "label": "Accent", "default": "#334fb4" },
+    { "type": "color", "id": "border_color", "label": "Border", "default": "#e2e2e2" },
+    { "type": "color", "id": "dropzone_bg_color", "label": "Dropzone BG", "default": "#f9f9f9" },
+    { "type": "color", "id": "button_color", "label": "Button", "default": "#222222" },
+    { "type": "color", "id": "button_text_color", "label": "Btn Text", "default": "#ffffff" },
+    { "type": "range", "id": "border_radius", "min": 0, "max": 30, "default": 8, "label": "Radius" },
+    { "type": "range", "id": "dropzone_radius", "min": 0, "max": 30, "default": 8, "label": "Dropzone Radius" },
+    { "type": "range", "id": "button_radius", "min": 0, "max": 30, "default": 4, "label": "Btn Radius" }
+  ],
+  "presets": [{ "name": "Custom File Upload" }]
+}
+{% endschema %}
