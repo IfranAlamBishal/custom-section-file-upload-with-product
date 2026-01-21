@@ -22,9 +22,7 @@ Follow these steps to install and use the Custom File Upload section in your Sho
 
 1. Open Your Shopify Theme Code Editor
 
-- From your Shopify admin, go to:
-
-- Online Store → Themes
+- From your Shopify admin, go to: Online Store → Themes
 
 - Find your active theme, then click ⋯ (More) → Edit code.
 
